@@ -16,12 +16,12 @@ class _MapScreenState extends State<MapScreen> {
  late final MapController _mapController;
 
  List<LatLng> get _mapPoints => const [
-       LatLng(55.755793, 37.617134),
-       LatLng(55.095960, 38.765519),
-       LatLng(56.129038, 40.406502),
-       LatLng(54.513645, 36.261268),
-       LatLng(54.193122, 37.617177),
-       LatLng(54.629540, 39.741809),
+       LatLng(47.202634, 38.935933),
+       LatLng(47.208659, 38.940412),
+       LatLng(47.209155, 38.935744),
+       LatLng(47.218397, 38.924556),
+       LatLng(47.204937, 38.946590),
+       LatLng(47.201482, 38.940277),
      ];
 
  @override
@@ -45,7 +45,7 @@ class _MapScreenState extends State<MapScreen> {
      body: FlutterMap(
        mapController: _mapController,
        options: const MapOptions(
-         initialCenter: LatLng(55.755793, 37.617134),
+         initialCenter: LatLng(47.212585, 38.916473),
          initialZoom: 5,
        ),
        children: [
@@ -76,7 +76,7 @@ List<Marker> _getMarkers(List<LatLng> mapPoints) {
    mapPoints.length,
    (index) => Marker(
      point: mapPoints[index],
-     child: Image.asset('assets/icons/marker.png'),
+     child: Image.asset('assets/icons/marker).png'),
      width: 50,
      height: 50,
      alignment: Alignment.center,
