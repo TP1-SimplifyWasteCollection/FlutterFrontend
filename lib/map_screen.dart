@@ -40,7 +40,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(60.0), // Height of the AppBar
+        preferredSize: Size.fromHeight(60.0),
         child: CustomAppBar(),
       ),
       body: FlutterMap(
@@ -51,8 +51,12 @@ class _MapScreenState extends State<MapScreen> {
         ),
         children: [
           TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.flutter_map_example'),
+              urlTemplate: 'https://api.mapbox.com/styles/v1/projectffokildam/clz8ah8yq001e01qrfwsba0m8/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg',
+              additionalOptions: const {
+                'accessToken': 'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg',
+                'id' : 'mapbox.mapbox-streets-v8',
+              }
+          ),
           MarkerClusterLayerWidget(
             options: MarkerClusterLayerOptions(
               size: const Size(50, 50),
@@ -124,7 +128,7 @@ class CustomAppBar extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/Header.png'), // Path to your image
+              image: AssetImage('assets/Header.png'), 
               fit: BoxFit.cover,
             ),
           ),
@@ -134,24 +138,23 @@ class CustomAppBar extends StatelessWidget {
           leading: IconButton(
             icon: Icon(Icons.menu),
             onPressed: () {
-              // Define the action to be taken when the back button is pressed
-              print("Back button pressed");
+
             },
           ),
           title: const Text(
             'RecycleME',
             style: TextStyle(
-              fontFamily: 'Monospace', // Use the built-in Roboto font
-              fontSize: 30, // Adjust the font size as needed
+              fontFamily: 'Monospace', 
+              fontSize: 30, 
             ),
           ),
-          backgroundColor: Colors.transparent, // Make AppBar transparent
-          elevation: 0, // Remove shadow
+          backgroundColor: Colors.transparent, 
+          elevation: 0, 
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.login),
               onPressed: () {
-                print("Menu button pressed");
+
               },
             ),
           ],
