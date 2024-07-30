@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 //import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'map_screen.dart';
 
@@ -8,14 +9,19 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "RecycleME",
       home: Scaffold(
-        body: MapScreen()
+        body: Center(
+          child: Container(
+            child: FullScMap()
+          ),
+        ),
       )
     );
   }
