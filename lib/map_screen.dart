@@ -18,13 +18,26 @@ class _FullMapState extends State<FullMap> {
     super.initState();
   }
 
+  void checkPermissionStatus() async {
+    var status = await Permission.locationWhenInUse.status;
+    if (status == PermissionStatus.granted) {
+      
+      _getLocation();
+      _getLocation();
+    } else {
+      // Go to Second Screen
+    }
+  }
+
   _onMapCreated(MapboxMap mapboxMap) {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    checkPermissionStatus();
   }
 
   Future<void> _getLocation() async {
     var status = await Permission.locationWhenInUse.request();
+    print('Got to _getLocation');
     if (status.isGranted) {
       mapboxMap?.location
           .updateSettings(LocationComponentSettings(enabled: true));
@@ -32,7 +45,8 @@ class _FullMapState extends State<FullMap> {
       mapboxMap?.flyTo(
           CameraOptions(
               center: Point(
-                  coordinates: Position(userLocation!.lng.toDouble(),userLocation.lat.toDouble())),
+                  coordinates: Position(userLocation!.lng.toDouble(),
+                      userLocation.lat.toDouble())),
               zoom: 14,
               bearing: 0,
               pitch: 5),
