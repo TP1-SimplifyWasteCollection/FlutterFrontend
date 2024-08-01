@@ -1,73 +1,92 @@
 import 'package:flutter/material.dart';
-import 'package:mapbox_gl/mapbox_gl.dart';
-import 'package:geolocator/geolocator.dart';
-import 'dart:typed_data';
-import 'package:flutter/services.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'get_location.dart';
 
-class FullScMap extends StatefulWidget {
-  const FullScMap({super.key});
+class FullMap extends StatefulWidget {
+  const FullMap({super.key});
 
   @override
-  State createState() => FullScMapState();
+  State<FullMap> createState() => _FullMapState();
 }
 
-class FullScMapState extends State<FullScMap> {
-  MapboxMapController? mapController;
+class _FullMapState extends State<FullMap> {
+  MapboxMap? mapboxMap;
 
   @override
   void initState() {
     super.initState();
-    _getUserLocation();
   }
 
-  Future<void> _getUserLocation() async {
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high); // or use `await _location.getLocation();` for `location` package
-    if (mapController != null) {
-      // Add a marker with the default location icon
-      await mapController!.addImage(
-        'custom_marker', // Unique name for the icon
-        await _loadIcon(), // Load the icon from assets
-      );
-      mapController!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(position.latitude, position.longitude),
-          iconImage: 'custom_marker', // Mapbox's default location icon
-          iconSize: 0.1,
-        ),
-      );
+  _onMapCreated(MapboxMap mapboxMap) {
+    this.mapboxMap = mapboxMap;
+    mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+  }
 
-      // Optionally, move the camera to the user's location
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(position.latitude, position.longitude),
-          14.0, // Zoom level
-        ),
-      );
+  Future<void> _getLocation() async {
+    var status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      mapboxMap?.location
+          .updateSettings(LocationComponentSettings(enabled: true));
+      Position? userLocation = await mapboxMap?.style.getPuckPosition();
+      mapboxMap?.flyTo(
+          CameraOptions(
+              center: Point(
+                  coordinates: Position(userLocation!.lng.toDouble(),userLocation.lat.toDouble())),
+              zoom: 14,
+              bearing: 0,
+              pitch: 5),
+          MapAnimationOptions(duration: 1300, startDelay: 0));
+    } else {
+      _showPermissionDeniedDialog();
     }
   }
-  Future<Uint8List> _loadIcon() async {
-    // Load the custom icon from assets
-    final ByteData data = await rootBundle.load('assets/icons/location.png');
-    return data.buffer.asUint8List();
-  }
 
-  void _onMapCreated(MapboxMapController controller) {
-    mapController = controller;
-    _getUserLocation();
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Доступ к местоположению запрещен'),
+          content: Text(
+              'Для корректной работы приложению требуется доступ к Вашему местоположению.\nПожалуйста откройте приложение настройки и дайте доступ.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Перейти в настройки'),
+              onPressed: () {
+                openAppSettings();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Не давать доступ'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    _getUserLocation();
+    MapboxOptions.setAccessToken(
+        'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg');
     return Scaffold(
-      body: MapboxMap(
-        accessToken: 'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg',
+      body: MapWidget(
+        key: ValueKey("mapWidget"),
         onMapCreated: _onMapCreated,
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(0, 0),
-          zoom: 10,
-        ),
-        styleString: 'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
+        styleUri: 'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).primaryColor,
+        onPressed: () {
+          _getLocation();
+        },
+        tooltip: 'Add Something',
+        child: const Icon(Icons.location_on),
       ),
     );
   }

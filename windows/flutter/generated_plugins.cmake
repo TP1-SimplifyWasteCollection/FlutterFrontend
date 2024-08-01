@@ -3,7 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  geolocator_windows
+  dynamic_color
   permission_handler_windows
 )
 

@@ -5,8 +5,8 @@
 import FlutterMacOS
 import Foundation
 
-import geolocator_apple
+import dynamic_color
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
+  DynamicColorPlugin.register(with: registry.registrar(forPlugin: "DynamicColorPlugin"))
 }
