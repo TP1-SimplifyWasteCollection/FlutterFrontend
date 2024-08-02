@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'get_location.dart';
+import 'package:geolocator/geolocator.dart' as geolocator;
+import 'package:geotypes/geotypes.dart' as geo;
 
 class FullMap extends StatefulWidget {
   const FullMap({super.key});
@@ -16,43 +17,57 @@ class _FullMapState extends State<FullMap> {
   @override
   void initState() {
     super.initState();
+    _getLocation();
   }
 
-  void checkPermissionStatus() async {
-    var status = await Permission.locationWhenInUse.status;
-    if (status == PermissionStatus.granted) {
-      
-      _getLocation();
-      _getLocation();
-    } else {
-      // Go to Second Screen
-    }
-  }
-
-  _onMapCreated(MapboxMap mapboxMap) {
+  void _onMapCreated(MapboxMap mapboxMap) {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    checkPermissionStatus();
+    _enableLocationComponent();
   }
 
   Future<void> _getLocation() async {
     var status = await Permission.locationWhenInUse.request();
-    print('Got to _getLocation');
     if (status.isGranted) {
-      mapboxMap?.location
-          .updateSettings(LocationComponentSettings(enabled: true));
-      Position? userLocation = await mapboxMap?.style.getPuckPosition();
-      mapboxMap?.flyTo(
-          CameraOptions(
-              center: Point(
-                  coordinates: Position(userLocation!.lng.toDouble(),
-                      userLocation.lat.toDouble())),
-              zoom: 14,
-              bearing: 0,
-              pitch: 5),
-          MapAnimationOptions(duration: 1300, startDelay: 0));
+      _enableLocationComponent();
     } else {
       _showPermissionDeniedDialog();
+    }
+  }
+
+  Future<void> _enableLocationComponent() async {
+    if (mapboxMap != null) {
+      await mapboxMap!.location.updateSettings(LocationComponentSettings(
+        enabled: true,
+        pulsingEnabled: true,
+        showAccuracyRing: true,
+      ));
+      _moveCameraToPosition();
+    }
+  }
+
+  Future<void> _moveCameraToPosition() async {
+    try {
+      geolocator.Position position = await geolocator.Geolocator.getCurrentPosition(
+        desiredAccuracy: geolocator.LocationAccuracy.high,
+      );
+
+      mapboxMap?.flyTo(
+        CameraOptions(
+          center: Point(
+            coordinates: geo.Position(
+              position.longitude,
+              position.latitude,
+            ),
+          ),
+          zoom: 14,
+          bearing: 0,
+          pitch: 5,
+        ),
+        MapAnimationOptions(duration: 1300, startDelay: 0),
+      );
+    } catch (e) {
+      print('Error getting location: $e');
     }
   }
 
@@ -63,7 +78,8 @@ class _FullMapState extends State<FullMap> {
         return AlertDialog(
           title: Text('Доступ к местоположению запрещен'),
           content: Text(
-              'Для корректной работы приложению требуется доступ к Вашему местоположению.\nПожалуйста откройте приложение настройки и дайте доступ.'),
+            'Для корректной работы приложению требуется доступ к Вашему местоположению.\nПожалуйста откройте приложение настройки и дайте доступ.',
+          ),
           actions: <Widget>[
             TextButton(
               child: Text('Перейти в настройки'),
@@ -87,11 +103,13 @@ class _FullMapState extends State<FullMap> {
   @override
   Widget build(BuildContext context) {
     MapboxOptions.setAccessToken(
-        'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg');
+      'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg',
+    );
     return Scaffold(
       body: MapWidget(
         key: ValueKey("mapWidget"),
         onMapCreated: _onMapCreated,
+        cameraOptions: CameraOptions(anchor: ScreenCoordinate(x: 0, y: 0)),
         styleUri: 'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
       ),
       floatingActionButton: FloatingActionButton(
