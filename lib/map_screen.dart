@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
-import 'package:geotypes/geotypes.dart' as geo;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FullMap extends StatefulWidget {
   const FullMap({super.key});
@@ -13,17 +14,58 @@ class FullMap extends StatefulWidget {
 
 class _FullMapState extends State<FullMap> {
   MapboxMap? mapboxMap;
+  CameraOptions? initialCameraOptions;
+  bool isLocationLoaded = false;
+  bool isCameraOnUserLocation = false;
+  geolocator.Position? currentUserLocation;
+  Timer? cameraCheckTimer;
 
   @override
   void initState() {
     super.initState();
-    _getLocation();
+    _loadPreviousLocation();
+  }
+
+  @override
+  void dispose() {
+    cameraCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadPreviousLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final double? longitude = prefs.getDouble('longitude');
+    final double? latitude = prefs.getDouble('latitude');
+
+    if (longitude != null && latitude != null) {
+      setState(() {
+        initialCameraOptions = CameraOptions(
+          center: Point(coordinates: Position(longitude, latitude)),
+          zoom: 14,
+          bearing: 0,
+          pitch: 5,
+        );
+      });
+    }
+    setState(() {
+      isLocationLoaded = true;
+    });
   }
 
   void _onMapCreated(MapboxMap mapboxMap) {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    _enableLocationComponent();
+    _getLocation();
+  }
+
+  Future<void> _onCameraChangeListener(
+      CameraChangedEventData cameraChangedEventData) async {
+    if (isCameraOnUserLocation == true) {
+      setState(() {
+        isCameraOnUserLocation = false;
+        print('Dzher Dzher');
+      });
+    }
   }
 
   Future<void> _getLocation() async {
@@ -47,28 +89,41 @@ class _FullMapState extends State<FullMap> {
   }
 
   Future<void> _moveCameraToPosition() async {
-    try {
-      geolocator.Position position = await geolocator.Geolocator.getCurrentPosition(
-        desiredAccuracy: geolocator.LocationAccuracy.high,
-      );
+    geolocator.Position position =
+        await geolocator.Geolocator.getCurrentPosition(
+      desiredAccuracy: geolocator.LocationAccuracy.high,
+    );
+    currentUserLocation = position;
 
-      mapboxMap?.flyTo(
-        CameraOptions(
-          center: Point(
-            coordinates: geo.Position(
-              position.longitude,
-              position.latitude,
-            ),
+    mapboxMap?.flyTo(
+      CameraOptions(
+        center: Point(
+          coordinates: Position(
+            position.longitude,
+            position.latitude,
           ),
-          zoom: 14,
-          bearing: 0,
-          pitch: 5,
         ),
-        MapAnimationOptions(duration: 1300, startDelay: 0),
-      );
-    } catch (e) {
-      print('Error getting location: $e');
-    }
+        zoom: 14,
+        bearing: 0,
+        pitch: 5,
+      ),
+      MapAnimationOptions(duration: 1300, startDelay: 0),
+    );
+
+    Timer(Duration(milliseconds: 1400), () {
+      setState(() {
+        isCameraOnUserLocation = true;
+      });
+    });
+
+    _saveLocation(position.longitude, position.latitude);
+    // Start periodic check
+  }
+
+  Future<void> _saveLocation(double longitude, double latitude) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('longitude', longitude);
+    await prefs.setDouble('latitude', latitude);
   }
 
   void _showPermissionDeniedDialog() {
@@ -105,21 +160,29 @@ class _FullMapState extends State<FullMap> {
     MapboxOptions.setAccessToken(
       'pk.eyJ1IjoicHJvamVjdGZmb2tpbGRhbSIsImEiOiJjbHVnc2dueGQxMGZqMmpyb3M4M3Zta3diIn0.Wt5JARj1tQmWb4rInzhKBg',
     );
+
     return Scaffold(
-      body: MapWidget(
-        key: ValueKey("mapWidget"),
-        onMapCreated: _onMapCreated,
-        cameraOptions: CameraOptions(anchor: ScreenCoordinate(x: 0, y: 0)),
-        styleUri: 'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).primaryColor,
-        onPressed: () {
-          _getLocation();
-        },
-        tooltip: 'Add Something',
-        child: const Icon(Icons.location_on),
-      ),
+      body: isLocationLoaded
+          ? MapWidget(
+              key: ValueKey("mapWidget"),
+              onMapCreated: _onMapCreated,
+              onCameraChangeListener: _onCameraChangeListener,
+              cameraOptions: initialCameraOptions ??
+                  CameraOptions(anchor: ScreenCoordinate(x: 0, y: 0)),
+              styleUri:
+                  'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
+            )
+          : Center(child: CircularProgressIndicator()),
+      floatingActionButton: isCameraOnUserLocation
+          ? null
+          : FloatingActionButton(
+              backgroundColor: Theme.of(context).primaryColor,
+              onPressed: () {
+                _getLocation();
+              },
+              tooltip: 'Add Something',
+              child: const Icon(Icons.location_on),
+            ),
     );
   }
 }
