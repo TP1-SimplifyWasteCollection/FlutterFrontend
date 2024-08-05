@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 final ColorScheme colorScheme = ColorScheme(
   brightness: Brightness.light,
-  primary: Colors.green[200]!,
-  onPrimary: Colors.white,
+  primary: Colors.green[50]!,
+  onPrimary: Colors.black,
   secondary: Colors.green[300]!,
   onSecondary: Colors.black,
   surface: Colors.white,
