@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-//import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'map_screen.dart';
+import 'package:testmap/pages/about.dart';
+import 'package:testmap/pages/login.dart';
+import 'package:testmap/pages/settings.dart';
+import 'theme.dart';
+import 'package:dynamic_color/dynamic_color.dart';
+import 'pages/main_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const RecycleMeApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  
+class RecycleMeApp extends StatelessWidget {
+  const RecycleMeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "RecycleME",
-      home: Scaffold(
-        body: Center(
-          child: Container(
-            child: FullScMap()
-          ),
-        ),
-      )
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: mainAppTheme,
+            home: RecycleMeMain(),
+            routes: {
+              '/aboutpage': (context) => AboutPage(),
+              '/settingspage' :(context) => SettingsPage(),
+              '/loginpage' : (context) => LoginPage(),
+            },
+            );
+      },
     );
   }
 }
