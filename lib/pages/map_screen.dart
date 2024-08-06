@@ -95,7 +95,7 @@ class _FullMapState extends State<FullMap> {
     );
     currentUserLocation = position;
 
-    mapboxMap?.flyTo(
+    mapboxMap?.easeTo(
       CameraOptions(
         center: Point(
           coordinates: Position(
@@ -107,10 +107,10 @@ class _FullMapState extends State<FullMap> {
         bearing: 0,
         pitch: 5,
       ),
-      MapAnimationOptions(duration: 1300, startDelay: 0),
+      MapAnimationOptions(duration: 500, startDelay: 0),
     );
 
-    Timer(Duration(milliseconds: 1400), () {
+    Timer(Duration(milliseconds: 550), () {
       setState(() {
         isCameraOnUserLocation = true;
       });

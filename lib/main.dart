@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:testmap/pages/about.dart';
-import 'package:testmap/pages/login.dart';
 import 'package:testmap/pages/settings.dart';
 import 'theme.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -24,7 +23,6 @@ class RecycleMeApp extends StatelessWidget {
             routes: {
               '/aboutpage': (context) => AboutPage(),
               '/settingspage' :(context) => SettingsPage(),
-              '/loginpage' : (context) => LoginPage(),
             },
             );
       },

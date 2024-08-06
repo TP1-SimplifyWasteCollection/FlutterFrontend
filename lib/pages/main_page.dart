@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:testmap/pages/login.dart';
 
 import 'map_screen.dart';
 
@@ -77,7 +78,9 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
         actions: <Widget>[
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/loginpage');
+              showDialog(context: context, builder: (BuildContext context){
+                return LoginPage();
+              });
             },
             icon: Icon(Icons.login_rounded),
           )
@@ -90,7 +93,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
               child: FullMap(),
             ),
           ),
-          CollectionPointsView( // Updated widget
+          CollectionPointsView(
             items: items,
             isExpanded: isExpanded,
             onToggleExpanded: toggleListView,

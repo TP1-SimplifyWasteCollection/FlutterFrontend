@@ -83,6 +83,7 @@ class _CollectionPointsViewState extends State<CollectionPointsView>
                 ],
               ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   SizeTransition(
                     sizeFactor: _fadeAnimation,
@@ -92,11 +93,13 @@ class _CollectionPointsViewState extends State<CollectionPointsView>
                       onPressed: widget.onSort,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(widget.isExpanded
-                        ? Icons.expand_less
-                        : Icons.expand_more),
-                    onPressed: widget.onToggleExpanded,
+                  Center(
+                    child: IconButton(
+                      icon: Icon(widget.isExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more),
+                      onPressed: widget.onToggleExpanded,
+                    ),
                   ),
                 ],
               ),
@@ -105,7 +108,7 @@ class _CollectionPointsViewState extends State<CollectionPointsView>
         ),
         AnimatedContainer(
           duration: Duration(milliseconds: 300),
-          height: widget.isExpanded ? 250.0 : 0.0, // Adjust heights as needed
+          height: widget.isExpanded ? 1000 : 0.0, // Adjust heights as needed
           child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
