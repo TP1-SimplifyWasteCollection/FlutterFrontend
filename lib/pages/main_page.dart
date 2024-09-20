@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:testmap/pages/login.dart';
+import 'package:testmap/pages/appbar.dart';
+
 
 import 'map_screen.dart';
 
-import 'package:testmap/screens/collection_points_view.dart'; // Updated import
+import 'package:testmap/screens/collection_points_view.dart';
+
 
 class RecycleMeMain extends StatefulWidget {
   const RecycleMeMain({super.key});
@@ -18,6 +20,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   List<String> items = List.generate(10, (index) => 'Item $index');
   bool isAscending = true;
   bool isExpanded = false;
+  bool isMenuOpened = false;
 
   @override
   void dispose() {
@@ -41,51 +44,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Drawer(
-        child: Column(
-          children: [
-            DrawerHeader(child: Icon(Icons.recycling, size: 48)),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text(
-                "Настройки",
-                style: TextStyle(fontSize: 18),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/settingspage');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.info_rounded),
-              title: Text(
-                "О приложении",
-                style: TextStyle(fontSize: 18),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/aboutpage');
-              },
-            )
-          ],
-        ),
-      ),
-      appBar: AppBar(
-        title: const Text('RecycleME'),
-        flexibleSpace: FlexibleSpaceBar(
-          background: Image.asset('assets/Header.png', fit: BoxFit.cover),
-        ),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              showDialog(context: context, builder: (BuildContext context){
-                return LoginPage();
-              });
-            },
-            icon: Icon(Icons.login_rounded),
-          )
-        ],
-      ),
+      appBar: MainAppBar(),
       body: Column(
         children: [
           Expanded(

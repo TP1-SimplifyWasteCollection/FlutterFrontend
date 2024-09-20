@@ -107,8 +107,8 @@ class _CollectionPointsViewState extends State<CollectionPointsView>
           ),
         ),
         AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          height: widget.isExpanded ? 1000 : 0.0, // Adjust heights as needed
+          duration: Duration(milliseconds: 150),
+          height: widget.isExpanded ? 500 : 0.0, // Adjust heights as needed
           child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(

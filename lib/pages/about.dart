@@ -14,7 +14,7 @@ class AboutPage extends StatelessWidget {
       ),
       body: const Center(
         child: Text(
-          'Z V ликвидация💩💩💩.',
+          'О приложении..',
           style: TextStyle(fontSize: 24),
         ),
       ),
