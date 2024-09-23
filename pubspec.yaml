@@ -43,6 +43,7 @@ dependencies:
   geolocator: ^12.0.0
   shared_preferences: ^2.3.1
   flutter_svg: ^2.0.10+1
+  yandex_maps_mapkit: ^4.7.2-beta6
 
 dev_dependencies:
   flutter_test:
@@ -73,7 +74,7 @@ flutter:
     - assets/icons/location.png
     - assets/logo.svg
     - assets/login.svg
-    - assets/menu.svg
+    - assets/button_info.svg
     - assets/add_point.svg
   #   - images/a_dot_ham.jpeg
 

@@ -132,6 +132,7 @@ class _FullMapState extends State<FullMap> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Доступ к местоположению запрещен'),
+          backgroundColor: Color(0xFF1D2024),
           content: Text(
             'Для корректной работы приложению требуется доступ к Вашему местоположению.\nПожалуйста откройте приложение настройки и дайте доступ.',
           ),
@@ -170,7 +171,7 @@ class _FullMapState extends State<FullMap> {
               cameraOptions: initialCameraOptions ??
                   CameraOptions(anchor: ScreenCoordinate(x: 0, y: 0)),
               styleUri:
-                  'mapbox://styles/projectffokildam/clz8b3xp4001h01qr406t8mkq',
+                  'mapbox://styles/projectffokildam/cm1aw1wcn02h801pmeiqf9wbd',
             )
           : Center(child: CircularProgressIndicator()),
       floatingActionButton: isCameraOnUserLocation

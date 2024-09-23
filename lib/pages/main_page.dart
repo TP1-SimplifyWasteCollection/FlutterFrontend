@@ -45,6 +45,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: MainAppBar(),
+      extendBodyBehindAppBar: true,
       body: Column(
         children: [
           Expanded(

@@ -34,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+      backgroundColor: Color(0xFF1D2024),
       content: Form(
         key: _formKey,
         child: Column(

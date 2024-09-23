@@ -5,7 +5,8 @@ import 'theme.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'pages/main_page.dart';
 
-void main() {
+void main() async{
+  
   runApp(const RecycleMeApp());
 }
 

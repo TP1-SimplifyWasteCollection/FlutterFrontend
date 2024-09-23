@@ -6,45 +6,44 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   final Size preferredSize;
 
-  MainAppBar({super.key})
-      : preferredSize = Size.fromHeight(60.0);
+  MainAppBar({super.key}) : preferredSize = Size.fromHeight(60.0);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Color(0xFF8E8E8E),
+      backgroundColor: Color(0xFF1D2024),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(20),
+        ),
+      ),
       leading: Padding(
-        padding: EdgeInsets.only(left: 8.0), 
+        padding: EdgeInsets.only(left: 8.0),
         child: IconButton(
           onPressed: () {},
-          icon: SvgPicture.asset('assets/menu.svg'),
+          icon: SvgPicture.asset('assets/button_info.svg'),
           padding: EdgeInsets.zero,
           constraints: BoxConstraints(),
         ),
       ),
       flexibleSpace: Container(
-        alignment: Alignment.bottomLeft, 
-        padding: EdgeInsets.only(left: 56.0, bottom: 19.0), 
+        alignment: Alignment.bottomLeft,
+        padding: EdgeInsets.only(left: 56.0, bottom: 19.0),
         child: SvgPicture.asset(
-          'assets/logo.svg', 
+          'assets/logo.svg',
           height: 25,
         ),
       ),
       actions: <Widget>[
-        IconButton(
-          onPressed: () {},
-          icon: SvgPicture.asset('assets/add_point.svg'),
-          padding:  EdgeInsets.only(bottom: 5.0),
-          constraints: BoxConstraints(),
-        ),
         Padding(
-          padding: EdgeInsets.only(right: 16.0), 
+          padding: EdgeInsets.only(right: 16.0),
           child: IconButton(
             onPressed: () {
               showDialog(
                 context: context,
+                barrierColor: Colors.transparent,
                 builder: (BuildContext context) {
-                  return LoginPage(); 
+                  return LoginPage();
                 },
               );
             },
