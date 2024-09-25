@@ -44,6 +44,7 @@ dependencies:
   shared_preferences: ^2.3.1
   flutter_svg: ^2.0.10+1
   yandex_maps_mapkit: ^4.7.2-beta6
+  sliding_up_panel: ^2.0.0+1
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +68,13 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/marker).png
@@ -76,6 +84,7 @@ flutter:
     - assets/login.svg
     - assets/button_info.svg
     - assets/add_point.svg
+    - assets/arrowUp.svg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
