@@ -165,6 +165,7 @@ class SlidingPanelContent extends StatelessWidget {
                           : 'assets/close.svg',
                       height: 25,
                     ),
+                    SizedBox(height: 5.0),
                   ],
                 ),
               ),
