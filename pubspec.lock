@@ -81,14 +81,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.2+3"
-  dynamic_color:
-    dependency: "direct main"
-    description:
-      name: dynamic_color
-      sha256: eae98052fa6e2826bdac3dd2e921c6ce2903be15c6b7f8b6d8a5d49b5086298d
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.7.0"
   fake_async:
     dependency: transitive
     description:
@@ -677,14 +669,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  yandex_maps_mapkit:
-    dependency: "direct main"
-    description:
-      name: yandex_maps_mapkit
-      sha256: "3b9ffdf9d24e0283897fe198603ee329af82d1a08ab6652aad5bbe94d7a48533"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.7.2-beta6"
 sdks:
   dart: ">=3.4.0 <4.0.0"
   flutter: ">=3.22.0"

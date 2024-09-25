@@ -39,11 +39,9 @@ dependencies:
   permission_handler: ^11.3.1
   mapbox_maps_flutter: ^2.1.0
   turf: ^0.0.10
-  dynamic_color: ^1.7.0
   geolocator: ^12.0.0
   shared_preferences: ^2.3.1
   flutter_svg: ^2.0.10+1
-  yandex_maps_mapkit: ^4.7.2-beta6
   sliding_up_panel: ^2.0.0+1
 
 dev_dependencies:
@@ -74,6 +72,10 @@ flutter:
         - asset: assets/fonts/Montserrat-Regular.ttf
         - asset: assets/fonts/Montserrat-Bold.ttf
           weight: 700
+    - family: MontserratBold
+      fonts:
+        - asset: assets/fonts/Montserrat-SemiBold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   assets:
@@ -85,6 +87,21 @@ flutter:
     - assets/button_info.svg
     - assets/add_point.svg
     - assets/arrowUp.svg
+    
+    - assets/recycleItems/add.svg
+    - assets/recycleItems/battery.svg
+    - assets/recycleItems/clothes.svg
+    - assets/recycleItems/danger.svg
+    - assets/recycleItems/glass.svg
+    - assets/recycleItems/lights.svg
+    - assets/recycleItems/metal.svg
+    - assets/recycleItems/other.svg
+    - assets/recycleItems/paper.svg
+    - assets/recycleItems/plastic.svg
+    - assets/recycleItems/tyres.svg
+    - assets/open.svg
+    - assets/close.svg
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
