@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:latlong2/latlong.dart';
 
 class RecyclingCardData {
   final String name;
@@ -8,6 +9,8 @@ class RecyclingCardData {
   final DateTime openingHour;
   final DateTime closingHour;
   final List<String> recyclingItems;
+  final LatLng position;
+  String id;
 
   RecyclingCardData({
     required this.name,
@@ -16,31 +19,21 @@ class RecyclingCardData {
     required this.openingHour,
     required this.closingHour,
     required this.recyclingItems,
+    required this.position,
+    required this.id
   });
 }
 
-class SlidingPanelContent extends StatelessWidget {
-  final now = DateTime.now();
+class SlidingPanelContent extends StatefulWidget {
+  final List<RecyclingCardData> cardsData;
+  SlidingPanelContent({super.key, required this.cardsData});
 
-  //Чисто для примера, потом парсим с бэка
-  final List<RecyclingCardData> cardsData = [
-    RecyclingCardData(
-      name: 'МирВторСырья',
-      address: 'ул. Извилистая, 13',
-      phone: '89889431886',
-      openingHour: DateTime(0, 1, 1, 9, 0),
-      closingHour: DateTime(0, 1, 1, 21, 0),
-      recyclingItems: ['Бумага', 'Пластик', 'Метал', 'Метал'],
-    ),
-    RecyclingCardData(
-      name: 'ЭкоПункт',
-      address: 'ул. Прямая, 24',
-      phone: '1234567890',
-      openingHour: DateTime(0, 1, 1, 9, 0),
-      closingHour: DateTime(0, 1, 1, 23, 0),
-      recyclingItems: ['Шины'],
-    ),
-  ];
+  @override
+  State<SlidingPanelContent> createState() => _SlidingPanelContentState();
+}
+
+class _SlidingPanelContentState extends State<SlidingPanelContent> {
+  final now = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +89,7 @@ class SlidingPanelContent extends StatelessWidget {
         ),
         SizedBox(height: 20.0),
         Column(
-          children: buildRecyclingCards(context, cardsData),
+          children: buildRecyclingCards(context, widget.cardsData),
         ),
         SizedBox(height: 15.0),
         IconButton(
@@ -107,7 +100,8 @@ class SlidingPanelContent extends StatelessWidget {
           padding: EdgeInsets.zero, 
           constraints:
               BoxConstraints(), 
-        )
+        ),
+        SizedBox(height: 15.0),
       ],
     );
   }
@@ -159,12 +153,25 @@ class SlidingPanelContent extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 20.0),
-                    SvgPicture.asset(
-                      isPointOpen(data.openingHour, data.closingHour)
-                          ? 'assets/open.svg'
-                          : 'assets/close.svg',
-                      height: 25,
-                    ),
+                     Row(
+                          children: [
+                            SvgPicture.asset(
+                              isPointOpen(data.openingHour, data.closingHour)
+                                  ? 'assets/open.svg'
+                                  : 'assets/close.svg',
+                              height: 25,
+                            ),
+                            SizedBox(width: 8.0), // Space between icon and text
+                            Text(
+                              '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Montserrat',
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                     SizedBox(height: 5.0),
                   ],
                 ),
@@ -212,6 +219,7 @@ class SlidingPanelContent extends StatelessWidget {
               items[i],
               style: TextStyle(
                 color: Color(0xFF11C44C),
+                fontFamily: 'Montserrat',
                 fontSize: 15,
               ),
               textAlign: TextAlign.center,
@@ -227,24 +235,72 @@ class SlidingPanelContent extends StatelessWidget {
     if (items.length > 3) {
       recyclingWidgets.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 4.0), // Space between boxes
-          child: Container(
+          padding: const EdgeInsets.only(bottom: 4.0),
+          child: SizedBox(
             width: 94,
             height: 25,
-            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-            decoration: BoxDecoration(
-              color: Color(0xFF20402B),
-              borderRadius: BorderRadius.circular(8.0), // Rounded corners
-            ),
-            child: Text(
-              '+ ещё $extraItemsCount',
-              style: TextStyle(
-                color: Color(0xFF11C44C),
-                fontSize: 15,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xFF20402B),
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  barrierColor: Colors.transparent,
+                  builder: (BuildContext context) {
+                    return Dialog(
+                      backgroundColor: Colors.transparent,
+                      child: Container(
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: items.map((item) {
+                            return Container(
+                              width: 94,
+                              height: 25,
+                              padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                              margin: EdgeInsets.symmetric(vertical: 2.0),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF20402B),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                item,
+                                style: TextStyle(
+                                  color: Color(0xFF11C44C),
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 15,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    );
+                  },
+                );
+                Future.delayed(Duration(seconds: 1), () {
+                  Navigator.of(context).pop();
+                });
+              },
+              child: Text(
+                '+ ещё $extraItemsCount',
+                style: TextStyle(
+                  color: Color(0xFF11C44C),
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ),

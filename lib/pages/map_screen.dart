@@ -4,9 +4,297 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:testmap/pages/slidingpanel.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:maps_launcher/maps_launcher.dart';
+
+class AnnotationClickListener extends OnPointAnnotationClickListener {
+  final BuildContext context;
+  final List<RecyclingCardData> cardsData; 
+  final MapboxMap mapboxMap; 
+
+  AnnotationClickListener(this.context, this.cardsData, this.mapboxMap);
+  @override
+  void onPointAnnotationClick(PointAnnotation annotation) {
+    print("onAnnotationClick, id: ${annotation.id}");
+
+
+    String cardId = annotation.id;
+
+
+    RecyclingCardData? cardData =
+        cardsData.firstWhere((card) => card.id == cardId);
+
+    if (cardData != null) {
+      mapboxMap.easeTo(
+        CameraOptions(
+          center: Point(
+            coordinates: Position(
+                cardData.position.longitude, cardData.position.latitude),
+          ),
+          zoom: 14,
+          bearing: 0,
+          pitch: 5,
+        ),
+        MapAnimationOptions(duration: 200, startDelay: 0),
+      );
+      Timer(Duration(milliseconds: 200), () {
+        showCustomDialog(context, cardData);
+      });
+    }
+  }
+
+  void _openMaps(double latitude, double longitude) async {
+    MapsLauncher.launchCoordinates(latitude, longitude);
+  }
+
+  void showCustomDialog(BuildContext context, RecyclingCardData data) {
+    int extraItemsCount =
+        data.recyclingItems.length > 3 ? data.recyclingItems.length - 2 : 0;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent, 
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width, 
+            height: 170, 
+            child: Card(
+              color: Color(0xFF2F3135),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          data.name,
+                          style: TextStyle(
+                            fontFamily: 'MontserratBold',
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
+                        ),
+                        SizedBox(height: 2.0),
+                        Text(
+                          '${data.address}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(height: 2.0),
+                        Text(
+                          '${data.phone}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(height: 2.0),
+                        Row(
+                          children: [
+                            SvgPicture.asset(
+                              isPointOpen(data.openingHour, data.closingHour)
+                                  ? 'assets/open.svg'
+                                  : 'assets/close.svg',
+                              height: 25,
+                            ),
+                            SizedBox(width: 8.0),
+                            Text(
+                              '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Montserrat',
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5.0),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          height: 30,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 2.0),
+                              backgroundColor: Color(
+                                  0xFF005BFF),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    8.0), 
+                              ),
+                            ),
+                            onPressed: () {
+                              double latitude = data.position.latitude;
+                              double longitude = data.position.longitude;
+                              _openMaps(latitude, longitude);
+                            },
+                            child: Center(
+                              child: Text(
+                                'Открыть в "Картах?"',
+                                style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 15,
+                                    color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Column(
+                      children: _buildRecyclingIcons(
+                          data.recyclingItems, extraItemsCount),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  bool isPointOpen(DateTime openingTime, DateTime closingTime) {
+    final now = DateTime.now();
+    final currentTime = DateTime(0, 1, 1, now.hour, now.minute);
+    return currentTime.isAfter(openingTime) &&
+        currentTime.isBefore(closingTime);
+  }
+
+  //билдит иконки сырья до 3 штук
+  List<Widget> _buildRecyclingIcons(List<String> items, int extraItemsCount) {
+    List<Widget> recyclingWidgets = [];
+    recyclingWidgets.add(SizedBox(height: 8.0));
+    for (int i = 0; i < (items.length > 3 ? 2 : items.length); i++) {
+      recyclingWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4.0),
+          child: Container(
+            width: 94,
+            height: 25,
+            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+            decoration: BoxDecoration(
+              color: Color(0xFF20402B),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Text(
+              items[i],
+              style: TextStyle(
+                color: Color(0xFF11C44C),
+                fontFamily: 'Montserrat',
+                fontSize: 15,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      );
+    }
+
+    //Проверяет на колво принимаемого сырья, если больше 3 - 3 иконка становится счетчиком оставшихся
+    if (items.length > 3) {
+      recyclingWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4.0),
+          child: SizedBox(
+            width: 94,
+            height: 25,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xFF20402B),
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  barrierColor: Colors.transparent,
+                  builder: (BuildContext context) {
+                    return Dialog(
+                      backgroundColor: Colors.transparent,
+                      child: Container(
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: items.map((item) {
+                            return Container(
+                              width: 94,
+                              height: 25,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 2.0),
+                              margin: EdgeInsets.symmetric(vertical: 2.0),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF20402B),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                item,
+                                style: TextStyle(
+                                  color: Color(0xFF11C44C),
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 15,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    );
+                  },
+                );
+                Future.delayed(Duration(seconds: 1), () {
+                  Navigator.of(context).pop();
+                });
+              },
+              child: Text(
+                '+ ещё $extraItemsCount',
+                style: TextStyle(
+                  color: Color(0xFF11C44C),
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return recyclingWidgets;
+  }
+}
 
 class FullMap extends StatefulWidget {
-  const FullMap({super.key});
+  List<RecyclingCardData> cardsData;
+  FullMap({super.key, required this.cardsData});
 
   @override
   State<FullMap> createState() => _FullMapState();
@@ -14,6 +302,8 @@ class FullMap extends StatefulWidget {
 
 class _FullMapState extends State<FullMap> {
   MapboxMap? mapboxMap;
+  PointAnnotation? pointAnnotation;
+  PointAnnotationManager? pointAnnotationManager;
   CameraOptions? initialCameraOptions;
   bool isLocationLoaded = false;
   bool isCameraOnUserLocation = false;
@@ -56,6 +346,7 @@ class _FullMapState extends State<FullMap> {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
     _getLocation();
+    _addMarkers();
   }
 
   Future<void> _onCameraChangeListener(
@@ -154,6 +445,31 @@ class _FullMapState extends State<FullMap> {
         );
       },
     );
+  }
+
+  Future<void> _addMarkers() async {
+    if (mapboxMap == null) return;
+
+    final pointAnnotationManager =
+        await mapboxMap!.annotations.createPointAnnotationManager();
+
+    final ByteData bytes = await rootBundle.load('assets/icons/marker).png');
+    final Uint8List list = bytes.buffer.asUint8List();
+
+    for (var card in widget.cardsData) {
+      PointAnnotation annotation = (await pointAnnotationManager.create(
+        PointAnnotationOptions(
+          geometry: Point(
+              coordinates:
+                  Position(card.position.longitude, card.position.latitude)),
+          image: list,
+        ),
+      ));
+      print("Created annotation, id: ${annotation.id}");
+      card.id = annotation.id;
+      pointAnnotationManager?.addOnPointAnnotationClickListener(
+          AnnotationClickListener(context, widget.cardsData, mapboxMap!));
+    }
   }
 
   @override

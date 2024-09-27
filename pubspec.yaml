@@ -43,6 +43,8 @@ dependencies:
   shared_preferences: ^2.3.1
   flutter_svg: ^2.0.10+1
   sliding_up_panel: ^2.0.0+1
+  url_launcher: ^6.3.0
+  maps_launcher: ^2.2.1
 
 dev_dependencies:
   flutter_test:

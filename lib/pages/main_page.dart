@@ -1,6 +1,8 @@
+// ignore_for_file: prefer_final_fields
+
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:testmap/pages/appbar.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:testmap/pages/slidingpanel.dart';
 
 import 'map_screen.dart';
@@ -17,6 +19,29 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   final ValueNotifier<String> _currentScreenNotifier =
       ValueNotifier('RecycleMeMain');
   final PanelController _panelController = PanelController();
+
+  List<RecyclingCardData> _cardsData = [
+    RecyclingCardData(
+      name: 'МирВторСырья',
+      address: 'ул. Извилистая, 13',
+      phone: '89889431886',
+      openingHour: DateTime(0, 1, 1, 9, 0),
+      closingHour: DateTime(0, 1, 1, 21, 0),
+      recyclingItems: ['Бумага', 'Пластик', 'Метал', 'Метал'],
+      position: LatLng(37.425496, -122.088060),
+      id: '1',
+    ),
+    RecyclingCardData(
+      name: 'ЭкоПункт',
+      address: 'ул. Прямая, 24',
+      phone: '1234567890',
+      openingHour: DateTime(0, 1, 1, 9, 0),
+      closingHour: DateTime(0, 1, 1, 23, 0),
+      recyclingItems: ['Шины'],
+      position: LatLng(37.421015, -122.087567),
+      id: '2',
+    ),
+  ];
  
 
   @override
@@ -39,7 +64,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
             minHeight: 230,
             panelBuilder: (ScrollController sc) =>
                 _buildSlidingPanel(sc, context),
-            body: FullMap(),
+            body: FullMap(cardsData: _cardsData,),
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             backdropEnabled: true,
             backdropOpacity: 1.0,
@@ -58,7 +83,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
       child: ListView(
       controller: sc,
       children: <Widget>[
-        SlidingPanelContent(), 
+        SlidingPanelContent(cardsData: _cardsData,), 
       ],
     ),
     );
