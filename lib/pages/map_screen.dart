@@ -24,7 +24,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 
 
     RecyclingCardData? cardData =
-        cardsData.firstWhere((card) => card.id == cardId);
+        cardsData.firstWhere((card) => card.id2 == cardId);
 
     if (cardData != null) {
       mapboxMap.easeTo(
@@ -61,7 +61,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: SizedBox(
-            width: MediaQuery.of(context).size.width, 
+            width: 600,
             height: 170, 
             child: Card(
               color: Color(0xFF2F3135),
@@ -293,7 +293,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 }
 
 class FullMap extends StatefulWidget {
-  List<RecyclingCardData> cardsData;
+  final ValueNotifier<List<RecyclingCardData>> cardsData; // Using ValueNotifier for updates
   FullMap({super.key, required this.cardsData});
 
   @override
@@ -314,12 +314,22 @@ class _FullMapState extends State<FullMap> {
   void initState() {
     super.initState();
     _loadPreviousLocation();
+    widget.cardsData.addListener(_onCardsDataChanged); // Listen for changes
   }
 
   @override
   void dispose() {
+    widget.cardsData.removeListener(_onCardsDataChanged); // Clean up listener
     cameraCheckTimer?.cancel();
     super.dispose();
+  }
+
+    // When cardsData updates, rebuild the map and add markers
+  void _onCardsDataChanged() {
+    setState(() {
+      // Rebuild the map or add/remove markers as needed
+      _addMarkers();
+    });
   }
 
   Future<void> _loadPreviousLocation() async {
@@ -448,6 +458,12 @@ class _FullMapState extends State<FullMap> {
   }
 
   Future<void> _addMarkers() async {
+    for (var card in widget.cardsData.value) {
+      _addMarker(card);
+    }
+  }
+
+  Future<void> _addMarker(RecyclingCardData card) async{
     if (mapboxMap == null) return;
 
     final pointAnnotationManager =
@@ -455,9 +471,7 @@ class _FullMapState extends State<FullMap> {
 
     final ByteData bytes = await rootBundle.load('assets/icons/marker).png');
     final Uint8List list = bytes.buffer.asUint8List();
-
-    for (var card in widget.cardsData) {
-      PointAnnotation annotation = (await pointAnnotationManager.create(
+    PointAnnotation annotation = (await pointAnnotationManager.create(
         PointAnnotationOptions(
           geometry: Point(
               coordinates:
@@ -465,11 +479,9 @@ class _FullMapState extends State<FullMap> {
           image: list,
         ),
       ));
-      print("Created annotation, id: ${annotation.id}");
-      card.id = annotation.id;
+      card.id2 = annotation.id;
       pointAnnotationManager?.addOnPointAnnotationClickListener(
-          AnnotationClickListener(context, widget.cardsData, mapboxMap!));
-    }
+          AnnotationClickListener(context, widget.cardsData.value, mapboxMap!));
   }
 
   @override

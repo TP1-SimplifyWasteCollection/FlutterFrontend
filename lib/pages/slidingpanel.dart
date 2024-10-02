@@ -10,7 +10,8 @@ class RecyclingCardData {
   final DateTime closingHour;
   final List<String> recyclingItems;
   final LatLng position;
-  String id;
+  String id2;
+  final int id;
 
   RecyclingCardData({
     required this.name,
@@ -20,13 +21,29 @@ class RecyclingCardData {
     required this.closingHour,
     required this.recyclingItems,
     required this.position,
-    required this.id
+    required this.id,
+    this.id2 = "",
   });
+
+  factory RecyclingCardData.fromJson(Map<String, dynamic> json) {
+    return RecyclingCardData(
+      name: json['name'],
+      address: json['address'],
+      phone: json['phone'],
+      openingHour: DateTime.parse(json['openingHour']),
+      closingHour: DateTime.parse(json['closingHour']),
+      recyclingItems: List<String>.from(json['recyclingItems']),
+      position: LatLng(json['latitude'], json['longitude']),
+      id: json['id'],
+    );
+  }
 }
 
 class SlidingPanelContent extends StatefulWidget {
   final List<RecyclingCardData> cardsData;
-  SlidingPanelContent({super.key, required this.cardsData});
+  final Function addCard;
+
+  SlidingPanelContent({super.key, required this.cardsData, required this.addCard});
 
   @override
   State<SlidingPanelContent> createState() => _SlidingPanelContentState();
@@ -64,6 +81,7 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
         SizedBox(height: 10.0),
         GridView.builder(
           shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(), // Prevent scrolling
           itemCount: 10,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 5,
@@ -81,7 +99,7 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
               'assets/recycleItems/metal.svg',
               'assets/recycleItems/battery.svg',
               'assets/recycleItems/other.svg',
-              'assets/recycleItems/tyres.svg'
+              'assets/recycleItems/tyres.svg',
             ];
 
             return _button(icons[index]);
@@ -94,12 +112,22 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
         SizedBox(height: 15.0),
         IconButton(
           onPressed: () {
-
+            widget.addCard(
+              RecyclingCardData(
+                name: 'New Card',
+                address: 'New Address',
+                phone: 'New Phone',
+                openingHour: DateTime.now(),
+                closingHour: DateTime.now(),
+                recyclingItems: ['New Item'],
+                position: LatLng(0, 0),
+                id: widget.cardsData.length + 1,
+              ),
+            );
           },
           icon: SvgPicture.asset('assets/recycleItems/add.svg'),
-          padding: EdgeInsets.zero, 
-          constraints:
-              BoxConstraints(), 
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(),
         ),
         SizedBox(height: 15.0),
       ],
@@ -114,7 +142,6 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
     );
   }
 
-  //билдит карточки, получает на вход список карточек
   List<Widget> buildRecyclingCards(
       BuildContext context, List<RecyclingCardData> cardsData) {
     return cardsData.map((data) {
@@ -153,25 +180,25 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                       ),
                     ),
                     SizedBox(height: 20.0),
-                     Row(
-                          children: [
-                            SvgPicture.asset(
-                              isPointOpen(data.openingHour, data.closingHour)
-                                  ? 'assets/open.svg'
-                                  : 'assets/close.svg',
-                              height: 25,
-                            ),
-                            SizedBox(width: 8.0), // Space between icon and text
-                            Text(
-                              '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Montserrat',
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                    Row(
+                      children: [
+                        SvgPicture.asset(
+                          isPointOpen(data.openingHour, data.closingHour)
+                              ? 'assets/open.svg'
+                              : 'assets/close.svg',
+                          height: 25,
                         ),
+                        SizedBox(width: 8.0),
+                        Text(
+                          '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 5.0),
                   ],
                 ),
@@ -180,8 +207,7 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                 top: 16,
                 right: 16,
                 child: Column(
-                  children: _buildRecyclingIcons(
-                      data.recyclingItems, extraItemsCount),
+                  children: _buildRecyclingIcons(data.recyclingItems, extraItemsCount),
                 ),
               ),
             ],
@@ -191,7 +217,6 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
     }).toList();
   }
 
-  //проверка, открыта ли точка
   bool isPointOpen(DateTime openingTime, DateTime closingTime) {
     final now = DateTime.now();
     final currentTime = DateTime(0, 1, 1, now.hour, now.minute);
@@ -199,10 +224,10 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
         currentTime.isBefore(closingTime);
   }
 
-  //билдит иконки сырья до 3 штук
   List<Widget> _buildRecyclingIcons(List<String> items, int extraItemsCount) {
     List<Widget> recyclingWidgets = [];
     recyclingWidgets.add(SizedBox(height: 8.0));
+    
     for (int i = 0; i < (items.length > 3 ? 2 : items.length); i++) {
       recyclingWidgets.add(
         Padding(
@@ -231,7 +256,6 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
       );
     }
 
-    //Проверяет на колво принимаемого сырья, если больше 3 - 3 иконка становится счетчиком оставшихся
     if (items.length > 3) {
       recyclingWidgets.add(
         Padding(
@@ -286,9 +310,6 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                     );
                   },
                 );
-                Future.delayed(Duration(seconds: 1), () {
-                  Navigator.of(context).pop();
-                });
               },
               child: Text(
                 '+ ещё $extraItemsCount',

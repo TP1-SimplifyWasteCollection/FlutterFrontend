@@ -8,6 +8,15 @@ import 'package:testmap/pages/slidingpanel.dart';
 import 'map_screen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
+import 'dart:convert'; // For jsonDecode
+import 'package:http/http.dart' as http;
+
+List<RecyclingCardData> _cardsData = [];
+List<RecyclingCardData> get cardsData => _cardsData;
+set cardsData(List<RecyclingCardData> newData) {
+  _cardsData = newData;
+}
+
 class RecycleMeMain extends StatefulWidget {
   const RecycleMeMain({super.key});
 
@@ -16,40 +25,41 @@ class RecycleMeMain extends StatefulWidget {
 }
 
 class _RecycleMeMainState extends State<RecycleMeMain> {
-  final ValueNotifier<String> _currentScreenNotifier =
-      ValueNotifier('RecycleMeMain');
+  final ValueNotifier<String> _currentScreenNotifier = ValueNotifier('RecycleMeMain');
   final PanelController _panelController = PanelController();
+  final ValueNotifier<List<RecyclingCardData>> _cardsDataNotifier = ValueNotifier([]);
 
-  List<RecyclingCardData> _cardsData = [
-    RecyclingCardData(
-      name: 'МирВторСырья',
-      address: 'ул. Извилистая, 13',
-      phone: '89889431886',
-      openingHour: DateTime(0, 1, 1, 9, 0),
-      closingHour: DateTime(0, 1, 1, 21, 0),
-      recyclingItems: ['Бумага', 'Пластик', 'Метал', 'Метал'],
-      position: LatLng(37.425496, -122.088060),
-      id: '1',
-    ),
-    RecyclingCardData(
-      name: 'ЭкоПункт',
-      address: 'ул. Прямая, 24',
-      phone: '1234567890',
-      openingHour: DateTime(0, 1, 1, 9, 0),
-      closingHour: DateTime(0, 1, 1, 23, 0),
-      recyclingItems: ['Шины'],
-      position: LatLng(37.421015, -122.087567),
-      id: '2',
-    ),
-  ];
- 
+  void addCard(RecyclingCardData newCard) {
+    setState(() {
+      _cardsDataNotifier.value.add(newCard);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecyclingPoints();
+  }
+
+  Future<void> _fetchRecyclingPoints() async {
+    final response = await http.get(
+      Uri.parse('http://points-api.ffokildam.ru:8079/api/points'),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      _cardsDataNotifier.value = data.map((json) => RecyclingCardData.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load recycling points');
+    }
+  }
 
   @override
   void dispose() {
     _currentScreenNotifier.dispose();
+    _cardsDataNotifier.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +70,10 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
         children: [
           SlidingUpPanel(
             controller: _panelController,
-            maxHeight: MediaQuery.of(context).size.height-100,
+            maxHeight: MediaQuery.of(context).size.height - 100,
             minHeight: 230,
-            panelBuilder: (ScrollController sc) =>
-                _buildSlidingPanel(sc, context),
-            body: FullMap(cardsData: _cardsData,),
+            panelBuilder: (ScrollController sc) => _buildSlidingPanel(sc, context),
+            body: FullMap(cardsData: _cardsDataNotifier),
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             backdropEnabled: true,
             backdropOpacity: 1.0,
@@ -81,12 +90,11 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
       context: context,
       removeTop: true,
       child: ListView(
-      controller: sc,
-      children: <Widget>[
-        SlidingPanelContent(cardsData: _cardsData,), 
-      ],
-    ),
+        controller: sc,
+        children: <Widget>[
+          SlidingPanelContent(cardsData: _cardsDataNotifier.value, addCard: addCard),
+        ],
+      ),
     );
   }
-
 }
