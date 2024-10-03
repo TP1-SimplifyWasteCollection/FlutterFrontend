@@ -4,6 +4,7 @@ import 'package:testmap/pages/settings.dart';
 import 'pages/main_page.dart';
 
 void main() async {
+
   runApp(const RecycleMeApp());
 }
 

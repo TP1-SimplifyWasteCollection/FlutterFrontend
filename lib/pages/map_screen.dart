@@ -8,14 +8,21 @@ import 'package:testmap/pages/slidingpanel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maps_launcher/maps_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:testmap/mapbox_map_provider.dart';
+
+List<PointAnnotation> pointAnnotations = [];
 
 class AnnotationClickListener extends OnPointAnnotationClickListener {
   final BuildContext context;
-  final List<RecyclingCardData> cardsData; 
-  final MapboxMap mapboxMap; 
+  final List<RecyclingCardData> cardsData;
+  final MapboxMap mapboxMap;
 
   AnnotationClickListener(this.context, this.cardsData, this.mapboxMap);
   @override
+
+
+
   void onPointAnnotationClick(PointAnnotation annotation) {
     print("onAnnotationClick, id: ${annotation.id}");
 
@@ -25,6 +32,8 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 
     RecyclingCardData? cardData =
         cardsData.firstWhere((card) => card.id2 == cardId);
+
+    print(cardData.name);
 
     if (cardData != null) {
       mapboxMap.easeTo(
@@ -293,7 +302,9 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 }
 
 class FullMap extends StatefulWidget {
-  final ValueNotifier<List<RecyclingCardData>> cardsData; // Using ValueNotifier for updates
+  final ValueNotifier<List<RecyclingCardData>> cardsData;
+
+
   FullMap({super.key, required this.cardsData});
 
   @override
@@ -309,6 +320,8 @@ class _FullMapState extends State<FullMap> {
   bool isCameraOnUserLocation = false;
   geolocator.Position? currentUserLocation;
   Timer? cameraCheckTimer;
+
+
 
   @override
   void initState() {
@@ -327,7 +340,7 @@ class _FullMapState extends State<FullMap> {
     // When cardsData updates, rebuild the map and add markers
   void _onCardsDataChanged() {
     setState(() {
-      // Rebuild the map or add/remove markers as needed
+      _deleteAllMarkers();
       _addMarkers();
     });
   }
@@ -355,6 +368,7 @@ class _FullMapState extends State<FullMap> {
   void _onMapCreated(MapboxMap mapboxMap) {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    Provider.of<MapboxMapProvider>(context, listen: false).setMapboxMap(mapboxMap);
     _getLocation();
     _addMarkers();
   }
@@ -463,15 +477,17 @@ class _FullMapState extends State<FullMap> {
     }
   }
 
+
   Future<void> _addMarker(RecyclingCardData card) async{
+
     if (mapboxMap == null) return;
 
-    final pointAnnotationManager =
+    pointAnnotationManager =
         await mapboxMap!.annotations.createPointAnnotationManager();
 
-    final ByteData bytes = await rootBundle.load('assets/icons/marker).png');
+    final ByteData bytes = await rootBundle.load('assets/icons/marker.png');
     final Uint8List list = bytes.buffer.asUint8List();
-    PointAnnotation annotation = (await pointAnnotationManager.create(
+    PointAnnotation annotation = (await pointAnnotationManager!.create(
         PointAnnotationOptions(
           geometry: Point(
               coordinates:
@@ -479,9 +495,18 @@ class _FullMapState extends State<FullMap> {
           image: list,
         ),
       ));
+
+      pointAnnotations.add(annotation);
       card.id2 = annotation.id;
+      print("Annotation id: ${card.id2}");
       pointAnnotationManager?.addOnPointAnnotationClickListener(
           AnnotationClickListener(context, widget.cardsData.value, mapboxMap!));
+  }
+
+  Future<void> _deleteAllMarkers() async {
+    if (mapboxMap == null) return;
+
+    await pointAnnotationManager!.deleteAll();
   }
 
   @override
