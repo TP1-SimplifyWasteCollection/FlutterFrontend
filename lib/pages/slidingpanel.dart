@@ -8,13 +8,13 @@ import 'package:testmap/mapbox_map_provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class RecyclingCardData {
-  late final String name;
-  late final String address;
-  late final String phone;
-  final DateTime openingHour;
-  final DateTime closingHour;
-  final List<String> recyclingItems;
-  final LatLng position;
+  String name;
+  String address;
+  String phone;
+  DateTime openingHour;
+  DateTime closingHour;
+  List<String> recyclingItems;
+  LatLng position;
   String id2;
   final int id;
 
@@ -43,12 +43,25 @@ class RecyclingCardData {
       id: json['id'],
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'address': address,
+      'phone': phone,
+      'openingHour': openingHour.toIso8601String(),
+      'closingHour': closingHour.toIso8601String(),
+      'recyclingItems': recyclingItems,
+      'latitude': position.latitude.toDouble(),
+      'longitude': position.longitude.toDouble(),
+    };
+  }
 }
 
 class SlidingPanelContent extends StatefulWidget {
   final ValueNotifier<List<RecyclingCardData>> cardsData;
   final Function addCard;
   final PanelController panelController;
+
 
   SlidingPanelContent(
       {super.key, required this.cardsData, required this.addCard,required this.panelController,});
@@ -59,6 +72,7 @@ class SlidingPanelContent extends StatefulWidget {
 
 class _SlidingPanelContentState extends State<SlidingPanelContent> {
   final now = DateTime.now();
+  bool _isAddingNewCard = false;
 
   @override
   void initState() {
@@ -72,8 +86,11 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
+    MapboxMapProvider mapboxMapProvider = Provider.of<MapboxMapProvider>(context, listen: false);
     return Column(
       children: <Widget>[
         SizedBox(height: 12.0),
@@ -153,101 +170,111 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('Add New Card'),
-                  content: StatefulBuilder(
-                    builder: (BuildContext context, StateSetter setState) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          TextField(
-                            controller: nameController,
-                            decoration: InputDecoration(hintText: 'Name'),
-                            onChanged: (value) {
-                              newCard.name = value;
-                            },
-                          ),
-                          TextField(
-                            controller: addressController,
-                            decoration: InputDecoration(hintText: 'Address'),
-                            onChanged: (value) {
-                              newCard.address = value;
-                            },
-                          ),
-                          TextField(
-                            controller: phoneController,
-                            decoration: InputDecoration(hintText: 'Phone'),
-                            onChanged: (value) {
-                              newCard.phone = value;
-                            },
-                          ),
-                          GridView.builder(
+                  content: Container(
+                    width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
+                    height: MediaQuery.of(context).size.height * 0.7, // Adjusted height to 70%
+                    child: Column(
+                      children: [
+                        // TextFields for Name, Address, and Phone
+                        TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(hintText: 'Name'),
+                          onChanged: (value) {
+                            newCard.name = value;
+                          },
+                        ),
+                        TextField(
+                          controller: addressController,
+                          decoration: InputDecoration(hintText: 'Address'),
+                          onChanged: (value) {
+                            newCard.address = value;
+                          },
+                        ),
+                        TextField(
+                          controller: phoneController,
+                          decoration: InputDecoration(hintText: 'Phone'),
+                          onChanged: (value) {
+                            newCard.phone = value;
+                          },
+                        ),
+                        SizedBox(height: 20), // Add some spacing before the GridView
+                        Expanded(
+                          child: GridView.builder(
                             shrinkWrap: true,
                             itemCount: 10,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 5,
-                              crossAxisSpacing: 1.0,
-                              mainAxisSpacing: 1.0,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10.0,
+                              mainAxisSpacing: 10.0,
+                              childAspectRatio: 3 / 1,
                             ),
                             itemBuilder: (context, index) {
-                              List<String> icons = [
-                                'assets/recycleItems/paper.svg',
-                                'assets/recycleItems/clothes.svg',
-                                'assets/recycleItems/plastic.svg',
-                                'assets/recycleItems/lights.svg',
-                                'assets/recycleItems/danger.svg',
-                                'assets/recycleItems/glass.svg',
-                                'assets/recycleItems/metal.svg',
-                                'assets/recycleItems/battery.svg',
-                                'assets/recycleItems/other.svg',
-                                'assets/recycleItems/tyres.svg',
+                              List<String> names = [
+                                'Paper',
+                                'Clothes',
+                                'Plastic',
+                                'Lights',
+                                'Dangerous',
+                                'Glass',
+                                'Metal',
+                                'Battery',
+                                'Other',
+                                'Tyres',
                               ];
 
-                              return IconButton(
+                              return TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    selectedItems[index] =
-                                        !selectedItems[index];
+                                    selectedItems[index] = !selectedItems[index];
                                     if (selectedItems[index]) {
-                                      newCard.recyclingItems.add(icons[index]);
+                                      newCard.recyclingItems.add(names[index]);
                                     } else {
-                                      newCard.recyclingItems
-                                          .remove(icons[index]);
+                                      newCard.recyclingItems.remove(names[index]);
                                     }
                                   });
                                 },
-                                icon: SvgPicture.asset(
-                                  icons[index],
-                                  color: selectedItems[index]
-                                      ? Colors.green
-                                      : null,
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.all(10),
+                                  backgroundColor:
+                                  selectedItems[index] ? Colors.green : Colors.white,
                                 ),
-                                padding: EdgeInsets.zero,
+                                child: Text(
+                                  names[index],
+                                  style: TextStyle(
+                                    color: selectedItems[index] ? Colors.white : Colors.black,
+                                  ),
+                                ),
                               );
                             },
                           ),
-                        ],
-                      );
-                    },
+                        ),
+                      ],
+                    ),
                   ),
                   actions: <Widget>[
+                    // Cancel button
                     TextButton(
                       child: Text('Cancel'),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
                     ),
+                    // Add button
                     TextButton(
                       child: Text('Add'),
-                      onPressed: () {
-                        widget.addCard(newCard);
-                        Navigator.of(context).pop();
+                      onPressed: () async {
+                        LatLng? camPosition = await mapboxMapProvider.getCurrentCameraPosition() as LatLng;
+                        newCard.position = camPosition;
+                        print(newCard.position);
+                        widget.addCard(newCard); // Add the new card
+                        Navigator.of(context).pop(); // Close the dialog
                       },
                     ),
                   ],
                 );
               },
             );
+
           },
           icon: SvgPicture.asset('assets/recycleItems/add.svg'),
           padding: EdgeInsets.zero,

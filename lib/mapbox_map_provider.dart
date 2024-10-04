@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:flutter/material.dart';
+import 'pages/map_screen.dart';
 class MapboxMapProvider extends ChangeNotifier {
   MapboxMap? mapboxMap;
 
@@ -22,5 +23,18 @@ class MapboxMapProvider extends ChangeNotifier {
       ),
       MapAnimationOptions(duration: 500, startDelay: 0),
     );
+
+
   }
+
+  Future<LatLng?> getCurrentCameraPosition() async {
+    CameraState? cameraState = await mapboxMap?.getCameraState();
+    if (cameraState != null && cameraState.center != null) {
+      // Extract the current camera position (longitude and latitude)
+      Position position = cameraState.center!.coordinates;
+      return LatLng(position.lat.toDouble(), position.lng.toDouble());
+    }
+    return null; // Return null if the camera state is unavailable
+  }
+
 }

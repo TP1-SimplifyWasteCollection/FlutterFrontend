@@ -30,13 +30,40 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   final ValueNotifier<String> _currentScreenNotifier =
       ValueNotifier('RecycleMeMain');
   final PanelController _panelController = PanelController();
-  final ValueNotifier<List<RecyclingCardData>> _cardsDataNotifier =
+  ValueNotifier<List<RecyclingCardData>> _cardsDataNotifier =
       ValueNotifier([]);
 
-  void addCard(RecyclingCardData newCard) {
-    setState(() {
-      _cardsDataNotifier.value.add(newCard);
-    });
+  void addCard(RecyclingCardData newCard) async {
+    // Convert the RecyclingCardData to JSON
+    final Map<String, dynamic> cardData = newCard.toJson();
+
+    // Define your API endpoint URL
+    final String url = 'http://points-api.ffokildam.ru:8079/api/points'; // Replace with your API URL
+
+    try {
+      // Send a POST request
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8', // Set the content type with UTF-8
+        },
+        body: jsonEncode(cardData), // Encode the JSON data
+      );
+
+      // Check the response status
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // If the server returns a 200 or 201 response, update the state
+        setState(() {
+          _fetchRecyclingPoints();
+        });
+      } else {
+        // Handle the error if the server response is not 200 or 201
+        throw Exception('Failed to add card: ${response.body}');
+      }
+    } catch (e) {
+      // Handle exceptions (e.g., network errors)
+      print('Error adding card: $e');
+    }
   }
 
   @override
@@ -51,7 +78,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
+      List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
       List<RecyclingCardData> newData =
           data.map((json) => RecyclingCardData.fromJson(json)).toList();
 
