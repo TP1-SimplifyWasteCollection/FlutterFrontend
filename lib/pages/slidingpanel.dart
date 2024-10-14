@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:geotypes/src/geojson.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:testmap/mapbox_map_provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:yandex_geocoder/yandex_geocoder.dart';
 
 class RecyclingCardData {
   String name;
@@ -16,8 +18,6 @@ class RecyclingCardData {
   List<String> recyclingItems;
   LatLng position;
   String id2;
-  final int id;
-
 
   RecyclingCardData({
     required this.name,
@@ -27,7 +27,6 @@ class RecyclingCardData {
     required this.closingHour,
     required this.recyclingItems,
     required this.position,
-    required this.id,
     this.id2 = "",
   });
 
@@ -40,7 +39,6 @@ class RecyclingCardData {
       closingHour: DateTime.parse(json['closingHour']),
       recyclingItems: List<String>.from(json['recyclingItems']),
       position: LatLng(json['latitude'], json['longitude']),
-      id: json['id'],
     );
   }
   Map<String, dynamic> toJson() {
@@ -61,18 +59,43 @@ class SlidingPanelContent extends StatefulWidget {
   final ValueNotifier<List<RecyclingCardData>> cardsData;
   final Function addCard;
   final PanelController panelController;
+  final ScrollController scrollController;
+  Timer? cameraCheckTimer;
 
 
-  SlidingPanelContent(
-      {super.key, required this.cardsData, required this.addCard,required this.panelController,});
+  SlidingPanelContent({
+    super.key,
+    required this.cardsData,
+    required this.addCard,
+    required this.panelController,
+    required this.scrollController,
+  });
 
   @override
-  State<SlidingPanelContent> createState() => _SlidingPanelContentState();
+  State<SlidingPanelContent> createState() => SlidingPanelContentState();
 }
 
-class _SlidingPanelContentState extends State<SlidingPanelContent> {
+class SlidingPanelContentState extends State<SlidingPanelContent> {
   final now = DateTime.now();
-  bool _isAddingNewCard = false;
+  bool isAddingNewCard = false;
+  List<bool> selectedItems = List<bool>.filled(10, false);
+  RecyclingCardData newCard = RecyclingCardData(
+    name: 'Мусорный бак',
+    address: '',
+    phone: '',
+    openingHour: DateTime(0, 1, 1, 0, 0),
+    closingHour: DateTime(0, 1, 2, 0, 0),
+    recyclingItems: [],
+    position: LatLng(0, 0),
+  );
+  TextEditingController nameController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+  TextEditingController beginController = TextEditingController();
+  TextEditingController endController = TextEditingController();
+  final YandexGeocoder geocoder =
+      YandexGeocoder(apiKey: '84bcf9c3-f6e3-4b70-8f1c-bc30358112e2');
+  String address1 = 'null';
+  bool isCustomTime = false;
 
   @override
   void initState() {
@@ -86,11 +109,26 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
     });
   }
 
-
+  void scrollToTop() {
+    widget.scrollController.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    MapboxMapProvider mapboxMapProvider = Provider.of<MapboxMapProvider>(context, listen: false);
+    MapboxMapProvider mapboxMapProvider =
+        Provider.of<MapboxMapProvider>(context, listen: false);
+    return isAddingNewCard
+        ? _buildAddNewCardView(context, mapboxMapProvider)
+        : _buildDefaultView(context, mapboxMapProvider);
+  }
+
+  @override
+  Widget _buildDefaultView(
+      BuildContext context, MapboxMapProvider mapboxMapProvider) {
     return Column(
       children: <Widget>[
         SizedBox(height: 12.0),
@@ -149,132 +187,13 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
         SizedBox(height: 15.0),
         IconButton(
           onPressed: () {
-            RecyclingCardData newCard = RecyclingCardData(
-              name: '',
-              address: '',
-              phone: '',
-              openingHour: DateTime.now(),
-              closingHour: DateTime.now(),
-              recyclingItems: [],
-              position: LatLng(0, 0),
-              id: widget.cardsData.value.length + 1,
-            );
-
-            TextEditingController nameController = TextEditingController();
-            TextEditingController addressController = TextEditingController();
-            TextEditingController phoneController = TextEditingController();
-
-            List<bool> selectedItems = List<bool>.filled(10, false);
-
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  content: Container(
-                    width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
-                    height: MediaQuery.of(context).size.height * 0.7, // Adjusted height to 70%
-                    child: Column(
-                      children: [
-                        // TextFields for Name, Address, and Phone
-                        TextField(
-                          controller: nameController,
-                          decoration: InputDecoration(hintText: 'Name'),
-                          onChanged: (value) {
-                            newCard.name = value;
-                          },
-                        ),
-                        TextField(
-                          controller: addressController,
-                          decoration: InputDecoration(hintText: 'Address'),
-                          onChanged: (value) {
-                            newCard.address = value;
-                          },
-                        ),
-                        TextField(
-                          controller: phoneController,
-                          decoration: InputDecoration(hintText: 'Phone'),
-                          onChanged: (value) {
-                            newCard.phone = value;
-                          },
-                        ),
-                        SizedBox(height: 20), // Add some spacing before the GridView
-                        Expanded(
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            itemCount: 10,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10.0,
-                              mainAxisSpacing: 10.0,
-                              childAspectRatio: 3 / 1,
-                            ),
-                            itemBuilder: (context, index) {
-                              List<String> names = [
-                                'Paper',
-                                'Clothes',
-                                'Plastic',
-                                'Lights',
-                                'Dangerous',
-                                'Glass',
-                                'Metal',
-                                'Battery',
-                                'Other',
-                                'Tyres',
-                              ];
-
-                              return TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selectedItems[index] = !selectedItems[index];
-                                    if (selectedItems[index]) {
-                                      newCard.recyclingItems.add(names[index]);
-                                    } else {
-                                      newCard.recyclingItems.remove(names[index]);
-                                    }
-                                  });
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.all(10),
-                                  backgroundColor:
-                                  selectedItems[index] ? Colors.green : Colors.white,
-                                ),
-                                child: Text(
-                                  names[index],
-                                  style: TextStyle(
-                                    color: selectedItems[index] ? Colors.white : Colors.black,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  actions: <Widget>[
-                    // Cancel button
-                    TextButton(
-                      child: Text('Cancel'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    // Add button
-                    TextButton(
-                      child: Text('Add'),
-                      onPressed: () async {
-                        LatLng? camPosition = await mapboxMapProvider.getCurrentCameraPosition() as LatLng;
-                        newCard.position = camPosition;
-                        print(newCard.position);
-                        widget.addCard(newCard); // Add the new card
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-
+            scrollToTop();
+            setState(() {
+              isAddingNewCard = true;
+              widget.panelController.close();
+            });
+            Provider.of<MapboxMapProvider>(context, listen: false)
+                .toggleMarkerVisibility(true);
           },
           icon: SvgPicture.asset('assets/recycleItems/add.svg'),
           padding: EdgeInsets.zero,
@@ -283,6 +202,450 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
         SizedBox(height: 15.0),
       ],
     );
+  }
+
+  Widget _buildAddNewCardView(
+      BuildContext context, MapboxMapProvider mapboxMapProvider) {
+    return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+      return Container(
+        width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
+        height:
+            MediaQuery.of(context).size.height * 0.9, // Adjusted height to 70%
+        decoration: BoxDecoration(
+          color: Colors.transparent, // Set the background to transparent
+        ),
+        child: Column(
+          children: [
+            SizedBox(height: 12.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SvgPicture.asset('assets/arrowUp.svg'),
+              ],
+            ),
+            SizedBox(height: 12.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  "Добавьте новый пункт приема",
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 20,
+                    color: Color(0xFFF5F7FA),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.0),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.0),
+                color: Color(0xFF2F3135), // Background color for the container
+              ),
+              child: TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: 'Введите название:',
+                  hintStyle: TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none, // Remove the default border
+                  contentPadding:
+                      EdgeInsets.all(10), // Padding inside the TextField
+                ),
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+                onChanged: (value) {
+                  newCard.name = value;
+                },
+              ),
+            ),
+            SizedBox(height: 10),
+
+            Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.0),
+                color: Color(0xFF2F3135), // Background color for the container
+              ),
+              child: TextField(
+                controller: phoneController,
+                decoration: InputDecoration(
+                  hintText: 'Введите номер(при наличии):',
+                  hintStyle: TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none, // Remove the default border
+                  contentPadding:
+                      EdgeInsets.all(10), // Padding inside the TextField
+                ),
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+                onChanged: (value) {
+                  newCard.phone = value;
+                  print(newCard.phone);
+                },
+              ),
+            ),
+            SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  "Выберите время",
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 18,
+                    color: Color(0xFFF5F7FA),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    RadioListTile<bool>(
+                      title: Text(
+                        "Круглосуточно",
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                      value: false,
+                      groupValue: isCustomTime,
+                      activeColor: Color(0xFF005BFF),
+                      onChanged: (value) {
+                        setState(() {
+                          isCustomTime = value!;
+                          if (!isCustomTime) {
+                            newCard.openingHour = DateTime(0, 1, 1, 0, 0);
+                            newCard.closingHour = DateTime(0, 1, 2, 0, 0);
+                          }
+                        });
+                      },
+                    ),
+                    RadioListTile<bool>(
+                      title: Text(
+                        "Настроить время",
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                      value: true,
+                      groupValue: isCustomTime,
+                      activeColor: Color(0xFF005BFF),
+                      onChanged: (value) {
+                        setState(() {
+                          isCustomTime = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            if (isCustomTime) ...[
+              SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: Color(
+                            0xFF2F3135), // Background color for the container
+                      ),
+                      child: TextField(
+                        controller: beginController,
+                        decoration: InputDecoration(
+                          hintText: 'Открытие(hh)',
+                          hintStyle: TextStyle(
+                            fontFamily: 'Montserrat',
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                          border: InputBorder.none, // Remove the default border
+                          contentPadding: EdgeInsets.all(
+                              10), // Padding inside the TextField
+                        ),
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        onChanged: (value) {
+                          newCard.openingHour =
+                              DateTime(0, 1, 1, int.parse(value), 0);
+                        },
+                      ),
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: Color(
+                            0xFF2F3135), // Background color for the container
+                      ),
+                      child: TextField(
+                        controller: endController,
+                        decoration: InputDecoration(
+                          hintText: 'Закрытие(hh)',
+                          hintStyle: TextStyle(
+                            fontFamily: 'Montserrat',
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                          border: InputBorder.none, // Remove the default border
+                          contentPadding: EdgeInsets.all(
+                              10), // Padding inside the TextField
+                        ),
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        onChanged: (value) {
+                          newCard.closingHour =
+                              DateTime(0, 1, 1, int.parse(value), 0);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            SizedBox(height: 20), // Add some spacing before the GridView
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 22.0), // Adjust the horizontal padding as needed
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: 10,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10.0,
+                  mainAxisSpacing: 10.0,
+                  childAspectRatio: 3 / 1,
+                ),
+                itemBuilder: (context, index) {
+                  List<String> names = [
+                    'Бумага',
+                    'Одежда',
+                    'Пластик',
+                    'Лампочки',
+                    'Опасное',
+                    'Стекло',
+                    'Метал',
+                    'Батарейки',
+                    'Шины',
+                    'Другое',
+                  ];
+
+                  return Container(
+                    width: 94,
+                    height: 25,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    decoration: BoxDecoration(
+                      color: selectedItems[index]
+                          ? Color(0xFF005BFF)
+                          : Color(0xFF183347),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          selectedItems[index] = !selectedItems[index];
+                          if (selectedItems[index]) {
+                            newCard.recyclingItems.add(names[index]);
+                          } else {
+                            newCard.recyclingItems.remove(names[index]);
+                          }
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: selectedItems[index]
+                            ? Color(0xFF005BFF)
+                            : Color(0xFF183347),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 2.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      child: Text(
+                        names[index],
+                        style: TextStyle(
+                          color: selectedItems[index]
+                              ? Color(0xFFF5F7FA)
+                              : Color(0xFF005BFF),
+                          fontFamily: 'MontserratBold',
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            SizedBox(height: 40),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 23.0), // Adjust the horizontal padding as needed
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Container(
+                    width: 120,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF402933),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero, // Remove default padding
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Отменить',
+                          style: TextStyle(
+                            color: Color(0xFFFE1356),
+                            fontFamily: 'MontserratBold',
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                      onPressed: () {
+                        Provider.of<MapboxMapProvider>(context, listen: false)
+                            .toggleMarkerVisibility(false);
+                        setState(() {
+                          isAddingNewCard = false;
+                        });
+                        widget.panelController.close();
+                      },
+                    ),
+                  ),
+                  Container(
+                    width: 120,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF20402B),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero, // Remove default padding
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Добавить',
+                          style: TextStyle(
+                            color: Color(0xFF11C44C),
+                            fontFamily: 'MontserratBold',
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                      onPressed: () async {
+                        LatLng? camPosition = await mapboxMapProvider
+                            .getCurrentCameraPosition() as LatLng;
+                        Provider.of<MapboxMapProvider>(context, listen: false)
+                            .toggleMarkerVisibility(false);
+                        final GeocodeResponse _address =
+                            await geocoder.getGeocode(
+                          ReverseGeocodeRequest(
+                            pointGeocode: (
+                              lat: camPosition.latitude,
+                              lon: camPosition.longitude
+                            ),
+                          ),
+                        );
+                        String fullAddress =
+                            _address.firstAddress?.formatted ?? 'null';
+                        if (_address.firstAddress != null) {
+                          String fullAddress =
+                              _address.firstAddress?.formatted ?? 'null';
+
+                          List<String> addressParts = fullAddress.split(',');
+
+                          if (addressParts.length > 3) {
+                            String betweenThirdAndFourth =
+                                addressParts[3].trim();
+
+                            String firstNumberAfterFourth = '';
+
+                            if (addressParts.length > 4) {
+                              String afterFourth = addressParts[4].trim();
+
+                              RegExp regExp = RegExp(r'\d+');
+                              Match? match = regExp.firstMatch(afterFourth);
+
+                              if (match != null) {
+                                firstNumberAfterFourth = match.group(0) ?? '';
+                              }
+                            }
+
+                            newCard.address =
+                                '$betweenThirdAndFourth $firstNumberAfterFourth';
+                          } else {
+                            newCard.address = 'null';
+                          }
+                        } else {
+                          newCard.address = 'null';
+                        }
+                        print(newCard.address);
+                        setState(() {
+                          newCard.position = camPosition;
+                          widget.addCard(newCard);
+                          isAddingNewCard = false;
+                          widget.panelController.close();
+                          nameController.clear();
+                          phoneController.clear();
+                          beginController.clear();
+                          endController.clear();
+                          isCustomTime = false;
+                          selectedItems = List<bool>.filled(10, false);
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _button(String iconPath) {
@@ -300,7 +663,7 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
           data.recyclingItems.length > 3 ? data.recyclingItems.length - 2 : 0;
 
       return Container(
-        width: MediaQuery.of(context).size.width - 20,
+        width: MediaQuery.of(context).size.width,
         child: Card(
           color: Color(0xFF2F3135),
           shape: RoundedRectangleBorder(
@@ -315,7 +678,9 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                   children: <Widget>[
                     TextButton(
                       onPressed: () {
-                        Provider.of<MapboxMapProvider>(context, listen: false).easeCamera(data.position);
+                        scrollToTop();
+                        Provider.of<MapboxMapProvider>(context, listen: false)
+                            .easeCamera(data.position);
                         widget.panelController.close();
                         showDialog(
                           context: context,
@@ -338,7 +703,8 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                                       Padding(
                                         padding: const EdgeInsets.all(16.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: <Widget>[
                                             Text(
                                               data.name,
@@ -370,14 +736,17 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                                             Row(
                                               children: [
                                                 SvgPicture.asset(
-                                                  isPointOpen(data.openingHour, data.closingHour)
+                                                  isPointOpen(data.openingHour,
+                                                          data.closingHour)
                                                       ? 'assets/open.svg'
                                                       : 'assets/close.svg',
                                                   height: 25,
                                                 ),
                                                 SizedBox(width: 8.0),
                                                 Text(
-                                                  '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                                                  (data.openingHour.hour == 0 && data.closingHour.hour == 0)
+                                                      ? '24/7'
+                                                      : '${data.openingHour.hour} - ${data.closingHour.hour}',
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontFamily: 'Montserrat',
@@ -388,29 +757,37 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                                             ),
                                             SizedBox(height: 5.0),
                                             SizedBox(
-                                              width: MediaQuery.of(context).size.width,
+                                              width: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
                                               height: 30,
                                               child: TextButton(
                                                 style: TextButton.styleFrom(
                                                   padding: EdgeInsets.symmetric(
-                                                      horizontal: 8.0, vertical: 2.0),
-                                                  backgroundColor: Color(
-                                                      0xFF005BFF),
+                                                      horizontal: 8.0,
+                                                      vertical: 2.0),
+                                                  backgroundColor:
+                                                      Color(0xFF005BFF),
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(
-                                                        8.0),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8.0),
                                                   ),
                                                 ),
                                                 onPressed: () {
-                                                  double latitude = data.position.latitude;
-                                                  double longitude = data.position.longitude;
-                                                  _openMaps(latitude, longitude);
+                                                  double latitude =
+                                                      data.position.latitude;
+                                                  double longitude =
+                                                      data.position.longitude;
+                                                  _openMaps(
+                                                      latitude, longitude);
                                                 },
                                                 child: Center(
                                                   child: Text(
                                                     'Открыть в "Картах?"',
                                                     style: TextStyle(
-                                                        fontFamily: 'Montserrat',
+                                                        fontFamily:
+                                                            'Montserrat',
                                                         fontSize: 15,
                                                         color: Colors.white),
                                                   ),
@@ -425,7 +802,8 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                                         right: 16,
                                         child: Column(
                                           children: _buildRecyclingIcons(
-                                              data.recyclingItems, extraItemsCount),
+                                              data.recyclingItems,
+                                              extraItemsCount),
                                         ),
                                       ),
                                     ],
@@ -469,11 +847,13 @@ class _SlidingPanelContentState extends State<SlidingPanelContent> {
                         ),
                         SizedBox(width: 8.0),
                         Text(
-                          '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                          (data.openingHour.hour == 0 && data.closingHour.hour == 0)
+                              ? '24/7'
+                              : '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
                           style: TextStyle(
                             color: Colors.white,
                             fontFamily: 'Montserrat',
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ],

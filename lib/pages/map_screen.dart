@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:testmap/mapbox_map_provider.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 List<PointAnnotation> pointAnnotations = [];
 
@@ -121,7 +122,9 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
                             ),
                             SizedBox(width: 8.0),
                             Text(
-                              '${data.openingHour.hour}:00 - ${data.closingHour.hour}:00',
+                              (data.openingHour.hour == 0 && data.closingHour.hour == 0)
+                                  ? '24/7'
+                                  : '${data.openingHour.hour} - ${data.closingHour.hour}',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Montserrat',
@@ -303,15 +306,15 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 
 class FullMap extends StatefulWidget {
   final ValueNotifier<List<RecyclingCardData>> cardsData;
+  final PanelController panelController;
 
-
-  FullMap({super.key, required this.cardsData});
+  FullMap({super.key, required this.cardsData, required this.panelController});
 
   @override
-  State<FullMap> createState() => _FullMapState();
+  State<FullMap> createState() => FullMapState();
 }
 
-class _FullMapState extends State<FullMap> {
+class FullMapState extends State<FullMap> {
   MapboxMap? mapboxMap;
   PointAnnotation? pointAnnotation;
   PointAnnotationManager? pointAnnotationManager;
@@ -321,6 +324,15 @@ class _FullMapState extends State<FullMap> {
   geolocator.Position? currentUserLocation;
   Timer? cameraCheckTimer;
 
+
+  Future<void> getLocation() async {
+    var status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      _enableLocationComponent();
+    } else {
+      _showPermissionDeniedDialog();
+    }
+  }
 
 
   @override
@@ -369,7 +381,7 @@ class _FullMapState extends State<FullMap> {
     this.mapboxMap = mapboxMap;
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
     Provider.of<MapboxMapProvider>(context, listen: false).setMapboxMap(mapboxMap);
-    _getLocation();
+    getLocation();
     _addMarkers();
   }
 
@@ -379,18 +391,11 @@ class _FullMapState extends State<FullMap> {
       setState(() {
         isCameraOnUserLocation = false;
         print('Dzher Dzher');
+        widget.panelController.close();
       });
     }
   }
 
-  Future<void> _getLocation() async {
-    var status = await Permission.locationWhenInUse.request();
-    if (status.isGranted) {
-      _enableLocationComponent();
-    } else {
-      _showPermissionDeniedDialog();
-    }
-  }
 
   Future<void> _enableLocationComponent() async {
     if (mapboxMap != null) {
@@ -426,9 +431,10 @@ class _FullMapState extends State<FullMap> {
     );
 
     Timer(Duration(milliseconds: 550), () {
-      setState(() {
-        isCameraOnUserLocation = true;
-      });
+        setState(() {
+          isCameraOnUserLocation = true;
+          widget.panelController.close();
+        });
     });
 
     _saveLocation(position.longitude, position.latitude);
@@ -527,16 +533,6 @@ class _FullMapState extends State<FullMap> {
                   'mapbox://styles/projectffokildam/cm1aw1wcn02h801pmeiqf9wbd',
             )
           : Center(child: CircularProgressIndicator()),
-      floatingActionButton: isCameraOnUserLocation
-          ? null
-          : FloatingActionButton(
-              backgroundColor: Theme.of(context).primaryColor,
-              onPressed: () {
-                _getLocation();
-              },
-              tooltip: 'Add Something',
-              child: const Icon(Icons.location_on),
-            ),
     );
   }
 }

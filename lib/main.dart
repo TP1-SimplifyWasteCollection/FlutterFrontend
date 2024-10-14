@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:testmap/pages/about.dart';
-import 'package:testmap/pages/settings.dart';
 import 'pages/main_page.dart';
+import 'package:provider/provider.dart';
+import 'mapbox_map_provider.dart';
+
 
 void main() async {
 
-  runApp(const RecycleMeApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => MapboxMapProvider(),
+      child: RecycleMeApp(),
+    ),
+  );
 }
 
 class RecycleMeApp extends StatelessWidget {
@@ -16,10 +22,6 @@ class RecycleMeApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: RecycleMeMain(),
-      routes: {
-        '/aboutpage': (context) => AboutPage(),
-        '/settingspage': (context) => SettingsPage(),
-      },
     );
   }
 }

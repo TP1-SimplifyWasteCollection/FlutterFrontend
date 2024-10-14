@@ -22,6 +22,7 @@ set cardsData(List<RecyclingCardData> newData) {
 class RecycleMeMain extends StatefulWidget {
   const RecycleMeMain({super.key});
 
+
   @override
   State<RecycleMeMain> createState() => _RecycleMeMainState();
 }
@@ -32,6 +33,9 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
   final PanelController _panelController = PanelController();
   ValueNotifier<List<RecyclingCardData>> _cardsDataNotifier =
       ValueNotifier([]);
+  double _fabHeight = 245;
+  final GlobalKey<FullMapState> fullMapKey = GlobalKey<FullMapState>();
+  final GlobalKey<SlidingPanelContentState> slidingPanelKey = GlobalKey<SlidingPanelContentState>();
 
   void addCard(RecyclingCardData newCard) async {
     // Convert the RecyclingCardData to JSON
@@ -103,17 +107,37 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
     return ChangeNotifierProvider(
       create: (_) => MapboxMapProvider(),
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: MainAppBar(),
         extendBodyBehindAppBar: true,
         body: Stack(
           children: [
+            // FullMap should be below the marker
+            FullMap(key: fullMapKey, cardsData: _cardsDataNotifier,panelController: _panelController),
+            // Center the marker PNG image at the same level as the map
+            Consumer<MapboxMapProvider>(
+              builder: (context, provider, child) {
+                return provider.isMarkerVisible()
+                    ? Positioned(
+                  top: MediaQuery.of(context).size.height / 2 - 25,
+                  left: MediaQuery.of(context).size.width / 2 - 25,
+                  child: Image.asset(
+                    'assets/icons/location.png', // Your PNG asset path
+                    width: 50, // Adjust size
+                    height: 50, // Adjust size
+                  ),
+                )
+                    : Container(); // Return an empty container when not visible
+              },
+            ),
+            // SlidingUpPanel should be above the marker
             SlidingUpPanel(
+              isDraggable: slidingPanelKey.currentState?.isAddingNewCard ?? false ? false : true,
               controller: _panelController,
               maxHeight: MediaQuery.of(context).size.height - 100,
-              minHeight: 230,
+              minHeight: slidingPanelKey.currentState?.isAddingNewCard ?? false ? 70 : 230,
               panelBuilder: (ScrollController sc) =>
                   _buildSlidingPanel(sc, context),
-              body: FullMap(cardsData: _cardsDataNotifier),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               backdropEnabled: true,
               backdropOpacity: 1.0,
@@ -122,6 +146,66 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
               onPanelOpened: () {
                 _fetchRecyclingPoints();
               },
+              onPanelSlide: (double pos) => setState(() {
+                double currentMinHeight = slidingPanelKey.currentState?.isAddingNewCard ?? false ? 70 : 230;
+                _fabHeight = pos * (MediaQuery.of(context).size.height - 100 - currentMinHeight+15) +
+                    currentMinHeight+15;
+              }),
+            ),
+            Positioned(
+              left: MediaQuery.of(context).size.width / 2 - 100, // 100 for half the width of the button (200)
+              bottom: _fabHeight, // Move with FloatingActionButton
+              child: AnimatedOpacity(
+                opacity: slidingPanelKey.currentState?.isAddingNewCard ?? false ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300), // Adjust duration as needed
+                child: Container(
+                  width: 200, // Width of the button
+                  height: 50,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF005BFF),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),// Height of the button
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero, // Remove default padding
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Подтвердить выбор местоположения',
+                        textAlign: TextAlign.center, // Center the text
+                        maxLines: 2, // Allow text to wrap to 2 lines
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(
+                          color: Color(0xFFF5F7FA),
+                          fontFamily: 'MontserratBold',
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    onPressed: (){
+                      _panelController.open();
+                    },
+                  )
+                ),
+              ),
+            ),
+            Positioned(
+              right: 20.0,
+              bottom: _fabHeight,
+              child: AnimatedOpacity(
+                opacity: fullMapKey.currentState?.isCameraOnUserLocation ?? false ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 300), // Adjust duration as needed
+                child: FloatingActionButton(
+                  child: Icon(
+                    Icons.gps_fixed,
+                    color:Color(0xFF005BFF),
+                  ),
+                  onPressed: () {
+                    fullMapKey.currentState?.getLocation();
+                  },
+                  backgroundColor: Color(0xFF2F3135),
+                ),
+              ),
             ),
           ],
         ),
@@ -134,9 +218,10 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
       context: context,
       removeTop: true,
       child: ListView(
+        physics: slidingPanelKey.currentState?.isAddingNewCard ?? false ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
         controller: sc,
         children: <Widget>[
-          SlidingPanelContent(cardsData: _cardsDataNotifier, addCard: addCard, panelController: _panelController,),
+          SlidingPanelContent(key: slidingPanelKey, cardsData: _cardsDataNotifier, addCard: addCard, panelController: _panelController,scrollController: sc),
         ],
       ),
     );
