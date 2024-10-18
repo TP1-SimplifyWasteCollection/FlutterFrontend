@@ -438,7 +438,7 @@ class FullMapState extends State<FullMap> {
     });
 
     _saveLocation(position.longitude, position.latitude);
-    // Start periodic check
+    
   }
 
   Future<void> _saveLocation(double longitude, double latitude) async {
@@ -522,8 +522,7 @@ class FullMapState extends State<FullMap> {
     );
 
     return Scaffold(
-      body: isLocationLoaded
-          ? MapWidget(
+      body: MapWidget(
               key: ValueKey("mapWidget"),
               onMapCreated: _onMapCreated,
               onCameraChangeListener: _onCameraChangeListener,
@@ -531,8 +530,8 @@ class FullMapState extends State<FullMap> {
                   CameraOptions(anchor: ScreenCoordinate(x: 0, y: 0)),
               styleUri:
                   'mapbox://styles/projectffokildam/cm1aw1wcn02h801pmeiqf9wbd',
-            )
-          : Center(child: CircularProgressIndicator()),
+            ),
+
     );
   }
 }

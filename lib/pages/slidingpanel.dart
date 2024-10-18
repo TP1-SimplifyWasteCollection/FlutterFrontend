@@ -564,7 +564,7 @@ class SlidingPanelContentState extends State<SlidingPanelContent> {
                     ),
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero, // Remove default padding
+                        padding: EdgeInsets.zero, 
                       ),
                       child: Center(
                         child: Text(
@@ -816,7 +816,7 @@ class SlidingPanelContentState extends State<SlidingPanelContent> {
                       },
                       style: TextButton.styleFrom(
                         padding:
-                            EdgeInsets.zero, // Remove default padding if needed
+                            EdgeInsets.zero, 
                       ),
                       child: Text(
                         data.name,

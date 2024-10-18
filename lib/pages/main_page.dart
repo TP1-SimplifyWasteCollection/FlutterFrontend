@@ -86,7 +86,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
       List<RecyclingCardData> newData =
           data.map((json) => RecyclingCardData.fromJson(json)).toList();
 
-      // Only update _cardsDataNotifier.value if the number of items has changed
+
       if (newData.length != _cardsDataNotifier.value.length) {
         _cardsDataNotifier.value = newData;
       }
@@ -112,9 +112,9 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
         extendBodyBehindAppBar: true,
         body: Stack(
           children: [
-            // FullMap should be below the marker
+
             FullMap(key: fullMapKey, cardsData: _cardsDataNotifier,panelController: _panelController),
-            // Center the marker PNG image at the same level as the map
+
             Consumer<MapboxMapProvider>(
               builder: (context, provider, child) {
                 return provider.isMarkerVisible()
@@ -130,7 +130,7 @@ class _RecycleMeMainState extends State<RecycleMeMain> {
                     : Container(); // Return an empty container when not visible
               },
             ),
-            // SlidingUpPanel should be above the marker
+
             SlidingUpPanel(
               isDraggable: slidingPanelKey.currentState?.isAddingNewCard ?? false ? false : true,
               controller: _panelController,

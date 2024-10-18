@@ -94,10 +94,14 @@ flutter:
     - assets/icons/location.png
     - assets/logo.svg
     - assets/login.svg
+    - assets/logout.svg
+    - assets/profile.svg
     - assets/button_info.svg
     - assets/add_point.svg
     - assets/arrowUp.svg
-    
+    - assets/buttonClose.svg
+    - assets/telegram.png
+
     - assets/recycleItems/add.svg
     - assets/recycleItems/battery.svg
     - assets/recycleItems/clothes.svg
@@ -111,6 +115,8 @@ flutter:
     - assets/recycleItems/tyres.svg
     - assets/open.svg
     - assets/close.svg
+    - assets/icons/closelogin.svg
+    - assets/loginyandex.png
 
   #   - images/a_dot_ham.jpeg
 
