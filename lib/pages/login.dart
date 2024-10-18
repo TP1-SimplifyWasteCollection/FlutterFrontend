@@ -27,9 +27,9 @@ class _LoginPageState extends State<LoginPage> {
     return Center(
       child: Material(
         color: Colors
-            .transparent, // Transparent background to avoid default dialog padding
+            .transparent,
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.8, // Custom width
+          width: MediaQuery.of(context).size.width * 0.8,
           padding: const EdgeInsets.all(14.0),
           decoration: BoxDecoration(
             color: Color(0xFF1D2024),
@@ -196,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                               fontFamily: 'MontserratBold',
                               color: Colors.white,
-                              fontSize: 15,
+                              fontSize: 13,
                             ),
                           ),
                           TextSpan(
@@ -204,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                               fontFamily: 'MontserratBold',
                               color: Color(0xFF005BFF),
-                              fontSize: 15,
+                              fontSize: 13,
                             ),
                           ),
                         ],

@@ -239,7 +239,7 @@ class AboutPage extends StatelessWidget {
                     )),
               ),
             ),
-            SizedBox(height: 25),
+            SizedBox(height: 15),
             Text(
               'Версия приложения: 0.0.7(7)',
               style: TextStyle(

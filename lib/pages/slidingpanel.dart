@@ -508,7 +508,7 @@ class SlidingPanelContentState extends State<SlidingPanelContent> {
                               ? Color(0xFFF5F7FA)
                               : Color(0xFF005BFF),
                           fontFamily: 'MontserratBold',
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ),

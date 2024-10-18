@@ -75,7 +75,6 @@ class _MainAppBarState extends State<MainAppBar> {
               return IconButton(
                 onPressed: () {
                   if (loggedIn) {
-                      print(Navigator.canPop(context));
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -86,7 +85,7 @@ class _MainAppBarState extends State<MainAppBar> {
                   } else {
                     showDialog(
                       context: context,
-                      barrierColor: Colors.transparent,
+
                       builder: (BuildContext context) {
                         return LoginPage(
                           onLoginSuccess: () {
@@ -98,9 +97,7 @@ class _MainAppBarState extends State<MainAppBar> {
                   }
                 },
                 icon: SvgPicture.asset(
-                  Navigator.canPop(context)
-                      ? 'assets/logout.svg'
-                      : loggedIn
+                  loggedIn
                           ? 'assets/profile.svg'
                           : 'assets/login.svg', // Change icon based on login state
                 ),
